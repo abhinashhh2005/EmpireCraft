@@ -1,5 +1,6 @@
 import {
     SlashCommandBuilder,
+    PermissionFlagsBits,
 } from "discord.js";
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { createEmbed } from "../../utils/embeds.js";
@@ -172,11 +173,21 @@ export async function createInitialHelpMenu(client) {
 export default {
     data: new SlashCommandBuilder()
         .setName("help")
-        .setDescription("Displays the help menu with all available commands"),
+        .setDescription("Displays the help menu with all available commands")
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction, guildConfig, client) {
-        
         const { MessageFlags } = await import('discord.js');
+        
+        // Check if user is admin or server owner
+        if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator) && 
+            interaction.user.id !== interaction.guild.ownerId) {
+            return await interaction.reply({
+                content: "❌ Only admins and the server owner can use this command!",
+                flags: MessageFlags.Ephemeral
+            });
+        }
+        
         await InteractionHelper.safeDefer(interaction);
         
         const { embeds, components } = await createInitialHelpMenu(client);
@@ -204,4 +215,3 @@ export default {
         }, HELP_MENU_TIMEOUT_MS);
     },
 };
-
